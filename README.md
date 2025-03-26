@@ -158,6 +158,32 @@ This library supports a wide range of Tailwind classes including:
 ## Contributing
 Contributions are welcome! Feel free to open issues or submit pull requests.
 
+If you're contributing code, please make sure to build and test your changes before submitting a PR:
+
+```bash
+npm run build
+npm test
+```
+For maintainers: to publish a new version to npm, update the version in package.json and run:
+
+```bash
+npm publish
+ ```
+ 
+When you want to update your package in the future:
+
+1. Update the version number in package.json (following [semantic versioning](https://semver.org/))
+2. Make your changes
+3. Build the package
+4. Run `npm publish`
+
+For example, to update from version 0.1.0 to 0.1.1:
+
+```bash
+# Update version in package.json
+npm version patch  # This automatically updates the version number
+npm publish
+
 ## Disclaimer
 This library is not affiliated with Tailwind CSS or React PDF. It is a utility that converts Tailwind CSS classes to React PDF styles. This library is free software and released under the MIT license.
 This library was created with a "vibe coding" approach - an experimental, flow-state development process. It's a work in progress created with the assistance of Trae AI. Use at your own discretion and feel free to contribute to make it better! (BTW he created this disclaimer too);
