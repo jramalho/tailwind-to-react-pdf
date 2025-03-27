@@ -87,6 +87,22 @@ const tailwindToReactPDFMap: Record<string, any> = {
   'p-4': { padding: 16 },
   'p-5': { padding: 20 },
   
+  // Add horizontal padding (px) classes
+  'px-0': { paddingLeft: 0, paddingRight: 0 },
+  'px-1': { paddingLeft: 4, paddingRight: 4 },
+  'px-2': { paddingLeft: 8, paddingRight: 8 },
+  'px-3': { paddingLeft: 12, paddingRight: 12 },
+  'px-4': { paddingLeft: 16, paddingRight: 16 },
+  'px-5': { paddingLeft: 20, paddingRight: 20 },
+  
+  // Add vertical padding (py) classes
+  'py-0': { paddingTop: 0, paddingBottom: 0 },
+  'py-1': { paddingTop: 4, paddingBottom: 4 },
+  'py-2': { paddingTop: 8, paddingBottom: 8 },
+  'py-3': { paddingTop: 12, paddingBottom: 12 },
+  'py-4': { paddingTop: 16, paddingBottom: 16 },
+  'py-5': { paddingTop: 20, paddingBottom: 20 },
+  
   'pt-0': { paddingTop: 0 },
   'pt-1': { paddingTop: 4 },
   'pt-2': { paddingTop: 8 },
@@ -115,6 +131,22 @@ const tailwindToReactPDFMap: Record<string, any> = {
   'pl-4': { paddingLeft: 16 },
   'pl-5': { paddingLeft: 20 },
   
+  // Add horizontal margin (mx) classes
+  'mx-0': { marginLeft: 0, marginRight: 0 },
+  'mx-1': { marginLeft: 4, marginRight: 4 },
+  'mx-2': { marginLeft: 8, marginRight: 8 },
+  'mx-3': { marginLeft: 12, marginRight: 12 },
+  'mx-4': { marginLeft: 16, marginRight: 16 },
+  'mx-5': { marginLeft: 20, marginRight: 20 },
+  
+  // Add vertical margin (my) classes
+  'my-0': { marginTop: 0, marginBottom: 0 },
+  'my-1': { marginTop: 4, marginBottom: 4 },
+  'my-2': { marginTop: 8, marginBottom: 8 },
+  'my-3': { marginTop: 12, marginBottom: 12 },
+  'my-4': { marginTop: 16, marginBottom: 16 },
+  'my-5': { marginTop: 20, marginBottom: 20 },
+    
   // Flexbox
   'flex': { display: 'flex' },
   'flex-row': { flexDirection: 'row' },
@@ -215,8 +247,60 @@ export const tailwindToReactPDF = (className: string): Record<string, any> => {
   let styles = {};
   
   for (const cls of classes) {
+    // Check for predefined classes first
     if (tailwindToReactPDFMap[cls]) {
       styles = { ...styles, ...tailwindToReactPDFMap[cls] };
+    } 
+    // Handle arbitrary values with square brackets like mt-[40px]
+    else if (cls.includes('[') && cls.includes(']')) {
+      const prefix = cls.split('[')[0];
+      const valueWithBrackets = cls.split(prefix)[1];
+      const value = valueWithBrackets.substring(1, valueWithBrackets.length - 1);
+      
+      // Handle margin properties
+      if (prefix === 'm-') styles = { ...styles, margin: value };
+      else if (prefix === 'mt-') styles = { ...styles, marginTop: value };
+      else if (prefix === 'mr-') styles = { ...styles, marginRight: value };
+      else if (prefix === 'mb-') styles = { ...styles, marginBottom: value };
+      else if (prefix === 'ml-') styles = { ...styles, marginLeft: value };
+      else if (prefix === 'mx-') {
+        styles = { ...styles, marginLeft: value };
+        styles = { ...styles, marginRight: value };
+      }
+      else if (prefix === 'my-') {
+        styles = {...styles, marginTop: value };
+        styles = {...styles, marginBottom: value };
+      }
+      
+      // Handle padding properties
+      else if (prefix === 'p-') styles = { ...styles, padding: value };
+      else if (prefix === 'pt-') styles = { ...styles, paddingTop: value };
+      else if (prefix === 'pr-') styles = { ...styles, paddingRight: value };
+      else if (prefix === 'pb-') styles = { ...styles, paddingBottom: value };
+      else if (prefix === 'pl-') styles = { ...styles, paddingLeft: value };
+      else if (prefix === 'px-') {
+        styles = { ...styles, paddingLeft: value, paddingRight: value };
+      }
+      else if (prefix === 'py-') {
+        styles = { ...styles, paddingTop: value, paddingBottom: value };
+      }
+      
+      // Handle width and height
+      else if (prefix === 'w-') styles = { ...styles, width: value };
+      else if (prefix === 'h-') styles = { ...styles, height: value };
+      
+      // Handle font size
+      else if (prefix === 'text-') {
+        // Only apply if it looks like a size value, not a color
+        if (value.includes('px') || value.includes('rem') || value.includes('em') || !isNaN(parseFloat(value))) {
+          styles = {...styles, fontSize: value};
+        }
+      }
+      
+      // Handle other properties as needed
+      else {
+        console.warn(`Classe Tailwind com valor arbitrário não mapeada: ${cls}`);
+      }
     } else {
       console.warn(`Classe Tailwind não mapeada: ${cls}`);
     }
@@ -233,6 +317,11 @@ export const tailwindToReactPDF = (className: string): Record<string, any> => {
 export const reactStyleToReactPDF = (style: Record<string, any> = {}): Record<string, any> => {
   // Converte propriedades CSS para formato React-PDF
   const pdfStyle: Record<string, any> = {};
+  
+  // Ensure style is an object before using Object.entries
+  if (!style || typeof style !== 'object') {
+    return pdfStyle;
+  }
   
   // Mapeamento de propriedades CSS para React-PDF
   const propertyMap: Record<string, string> = {
@@ -273,3 +362,4 @@ export const reactStyleToReactPDF = (style: Record<string, any> = {}): Record<st
   
   return pdfStyle;
 };
+

@@ -1,6 +1,6 @@
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
   maxWorkers: '50%',
   cache: true,
@@ -16,5 +16,6 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/examples/**',
     '!src/index.ts'
-  ]
+  ],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts']
 };

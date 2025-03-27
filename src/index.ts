@@ -29,3 +29,5 @@ export {
   tailwindPDFPlugin,
   extractTailwindTheme
 } from './plugins/tailwindPlugin';
+
+export { ReactToReactPDF } from './components/ReactToReactPDF';

@@ -20,45 +20,23 @@ react
  ```
 
 ## Basic Usage
-```javascript
-import React from 'react';
-import { PDFViewer } from '@react-pdf/renderer';
-import { 
-  TailwindDocument, 
-  TailwindPage, 
-  TailwindView, 
-  TailwindText 
-} from 'tailwind-to-react-pdf';
+```jsx
+import { Document, Page } from '@react-pdf/renderer';
+import { tailwindToReactPDF, ReactToReactPDF } from 'tailwind-to-react-pdf';
 
 const MyDocument = () => (
-  <TailwindDocument>
-    <TailwindPage size="A4" className="p-10 bg-white">
-      <TailwindView className="flex flex-col items-center">
-        <TailwindText className="text-2xl font-bold text-blue-500 mb-4">
-          My PDF Document
-        </TailwindText>
-        
-        <TailwindView className="border border-gray-300 rounded p-4 mb-4 w-full">
-          <TailwindText className="text-lg font-medium mb-2">
-            Section with Border
-          </TailwindText>
-          <TailwindText className="text-gray-700">
-            This is an example of text inside a section with a border.
-            Tailwind classes are converted to React-PDF styles.
-          </TailwindText>
-        </TailwindView>
-      </TailwindView>
-    </TailwindPage>
-  </TailwindDocument>
+  <Document>
+    <Page>
+      <ReactToReactPDF>
+        <div className="flex p-4">
+          <h1 className="text-2xl font-bold text-blue-500">Hello, PDF!</h1>
+          <p className="mt-4">This is a PDF document styled with Tailwind CSS classes.</p>
+        </div>
+      </ReactToReactPDF>
+    </Page>
+  </Document>
 );
-
-const App = () => (
-  <PDFViewer width="100%" height="600px">
-    <MyDocument />
-  </PDFViewer>
-);
-
-export default App;
+```
 
 ## Available Components
 - `TailwindDocument`: Equivalent to the `Document` component from `@react-pdf/renderer`
@@ -135,6 +113,61 @@ const MyComponent = () => (
   </CustomText>
 );
  ```
+## Direct style conversion
+```jsx
+import { Text, View } from '@react-pdf/renderer';
+import { tailwindToReactPDF } from 'tailwind-to-react-pdf';
+
+const MyComponent = () => (
+  <View style={tailwindToReactPDF('flex p-4 border rounded-lg')}>
+    <Text style={tailwindToReactPDF('text-lg font-bold text-blue-500')}>
+      Hello, PDF!
+    </Text>
+  </View>
+);
+```
+
+
+## Using with Recharts
+```jsx
+import { Document, Page } from '@react-pdf/renderer';
+import { ReactToReactPDF, RechartsToReactPDF } from 'tailwind-to-react-pdf';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+
+const data = [
+  { name: 'Jan', value: 400 },
+  { name: 'Feb', value: 300 },
+  { name: 'Mar', value: 600 },
+  { name: 'Apr', value: 800 },
+  { name: 'May', value: 500 }
+];
+
+const MyChart = () => (
+  <BarChart width={500} height={300} data={data}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="name" />
+    <YAxis />
+    <Tooltip />
+    <Legend />
+    <Bar dataKey="value" fill="#8884d8" />
+  </BarChart>
+);
+
+const MyDocument = () => (
+  <Document>
+    <Page>
+      <ReactToReactPDF>
+        <div className="p-4">
+          <h1 className="text-2xl font-bold">Sales Report</h1>
+          <div className="mt-4">
+            <RechartsToReactPDF chart={<MyChart />} width={500} height={300} />
+          </div>
+        </div>
+      </ReactToReactPDF>
+    </Page>
+  </Document>
+);
+```
 
 ## Utilities
 ```javascript

@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "test": "jest",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -18,11 +19,25 @@
     "react-pdf",
     "tailwindcss"
   ],
-  "author": "Your Name",
+  "author": "Jonathan Ramalho",
   "license": "MIT",
   "peerDependencies": {
     "@react-pdf/renderer": "^3.0.0",
+    "puppeteer": "24.4.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^14.3.1",
+    "@types/jest": "^29.5.0",
+    "@types/react": "^18.0.0",
+    "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.5.0",
+    "puppeteer": "24.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
   },
   "repository": {
     "type": "git",
