@@ -1,17 +1,12 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Image, Svg } from '@react-pdf/renderer';
+import React, { useRef, useEffect, useState, ReactElement } from 'react';
+import { Svg } from '@react-pdf/renderer';
 
 interface RechartsToReactPDFProps {
-  chart: React.ReactNode;
+  chart: ReactElement;
   width?: number;
   height?: number;
   onCapture?: (svgString: string) => void;
 }
-
-// Component to render SVG content in React-PDF
-const SvgContent = ({ content }: { content: string }) => {
-  return <svg dangerouslySetInnerHTML={{ __html: content }} />;
-};
 
 export const RechartsToReactPDF: React.FC<RechartsToReactPDFProps> = ({ 
   chart, 
@@ -20,101 +15,104 @@ export const RechartsToReactPDF: React.FC<RechartsToReactPDFProps> = ({
   onCapture
 }) => {
   const [svgContent, setSvgContent] = useState<string | null>(null);
-  const chartRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!chartRef.current || !chart) return;
+    // Create a container to render the chart
+    const container = containerRef.current;
+    if (!container) return;
 
-    // Aumentar o tempo de espera para garantir que o gráfico seja renderizado
-    const timer = setTimeout(() => {
-      try {
-        // Verificar se o elemento está no DOM
-        if (!chartRef.current) {
-          console.error('Chart reference is no longer available');
-          return;
-        }
+    // Clear previous content
+    container.innerHTML = '';
 
-        // Tentar encontrar o SVG de várias maneiras
-        let svgElement = chartRef.current.querySelector('svg');
-        
-        // Se não encontrar diretamente, procurar em elementos filhos
-        if (!svgElement) {
-          const canvasElement = chartRef.current.querySelector('canvas');
-          if (canvasElement) {
-            // Para Chart.js, podemos tentar capturar o canvas em vez do SVG
-            console.log('Found canvas element, attempting to convert to image');
-            
-            // Criar um SVG temporário
-            const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            tempSvg.setAttribute('width', width.toString());
-            tempSvg.setAttribute('height', height.toString());
-            
-            // Adicionar uma imagem do canvas ao SVG
-            const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-            img.setAttribute('width', width.toString());
-            img.setAttribute('height', height.toString());
-            img.setAttribute('href', canvasElement.toDataURL('image/png'));
-            tempSvg.appendChild(img);
-            
-            svgElement = tempSvg;
-          } else {
-            console.error('Failed to find SVG or canvas element in chart');
-            return;
-          }
-        }
-        
-        // Clone the SVG to avoid modifying the original
-        const svgClone = svgElement.cloneNode(true) as SVGElement;
-        
-        // Ensure the SVG has width and height attributes
-        if (!svgClone.hasAttribute('width')) {
-          svgClone.setAttribute('width', width.toString());
-        }
-        if (!svgClone.hasAttribute('height')) {
-          svgClone.setAttribute('height', height.toString());
-        }
-        
-        // Convert to string
-        const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svgClone);
-        
-        setSvgContent(svgString);
-        
-        if (onCapture) {
-          onCapture(svgString);
-        }
-      } catch (error) {
-        console.error('Failed to capture chart SVG:', error);
+    // Render the chart in the container
+    const chartInstance = React.cloneElement(chart, {
+      width: width,
+      height: height
+    });
+    
+    // Use ReactDOM to render the chart
+    const ReactDOM = require('react-dom');
+    ReactDOM.render(chartInstance, container);
+
+    // Wait for the chart to render
+    setTimeout(() => {
+      // Find the SVG element
+      const svgElement = container.querySelector('svg');
+      if (!svgElement) {
+        console.error('No SVG element found in the chart');
+        return;
       }
-    }, 1000); // Aumentado para 1000ms para dar mais tempo para renderização
 
-    return () => clearTimeout(timer);
+      // Clean up SVG for React-PDF
+      // Remove any event listeners and React-specific attributes
+      const cleanSvg = svgElement.cloneNode(true) as SVGElement;
+      
+      // Ensure all styles are properly applied
+      const styles = window.getComputedStyle(svgElement);
+      cleanSvg.setAttribute('style', styles.cssText);
+      
+      // Apply computed styles to all child elements
+      const applyComputedStyles = (element: Element) => {
+        const computedStyle = window.getComputedStyle(element);
+        (element as SVGElement).setAttribute('style', computedStyle.cssText);
+        
+        Array.from(element.children).forEach(child => {
+          applyComputedStyles(child);
+        });
+      };
+      
+      Array.from(svgElement.children).forEach((child, index) => {
+        applyComputedStyles(child);
+        cleanSvg.children[index].setAttribute('style', (child as SVGElement).getAttribute('style') || '');
+      });
+
+      // Convert SVG to string
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(cleanSvg);
+      
+      // Call onCapture callback if provided
+      if (onCapture) {
+        onCapture(svgString);
+      }
+      
+      setSvgContent(svgString);
+      
+      // Clean up
+      ReactDOM.unmountComponentAtNode(container);
+    }, 500); // Increased timeout for rendering
+    
+    return () => {
+      // Clean up on unmount
+      if (container) {
+        const ReactDOM = require('react-dom');
+        ReactDOM.unmountComponentAtNode(container);
+      }
+    };
   }, [chart, width, height, onCapture]);
+
+  // Hidden div to render the chart
+  const hiddenStyle: React.CSSProperties = {
+    position: 'absolute',
+    visibility: 'hidden',
+    pointerEvents: 'none',
+    width: `${width}px`,
+    height: `${height}px`,
+    overflow: 'hidden'
+  };
 
   return (
     <>
-      {/* Hidden div to render the chart component */}
-      <div 
-        ref={chartRef} 
-        style={{ 
-          position: 'absolute', 
-          left: '-9999px', 
-          top: 0,
-          width: width, 
-          height: height,
-          opacity: 1, // Alterado para 1 para garantir renderização
-          pointerEvents: 'none',
-          overflow: 'visible',
-          zIndex: -1000
-        }}
-      >
-        {chart}
-      </div>
-      
-      {/* Render the captured SVG in React-PDF */}
+      <div ref={containerRef} style={hiddenStyle} />
       {svgContent && (
         <Svg width={width} height={height}>
-          <svg dangerouslySetInnerHTML={{ __html: svgContent }} />
+          <svg
+            dangerouslySetInnerHTML={{ __html: svgContent.replace(/<svg[^>]*>|<\/svg>/g, '') }}
+            width={width}
+            height={height}
+            viewBox={`0 0 ${width} ${height}`}
+            preserveAspectRatio="xMidYMid meet"
+          />
         </Svg>
       )}
     </>

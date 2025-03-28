@@ -31,19 +31,81 @@ export const ReactToReactPDF: React.FC<ReactToReactPDFProps> = ({ children }) =>
 
     // Handle custom React components
     if (typeof type === 'function' || typeof type === 'object') {
+      // Melhorar a detecção do nome do componente
       const componentName = typeof type === 'function' ? type.name || '' : '';
+      const displayName = (type as any).displayName || '';
+      
+      // Adicionar verificação para componentes com propriedade $$typeof (React.memo, forwardRef, etc)
+      const typeofSymbol = (type as any).$$typeof ? 
+        ((type as any).type?.displayName || (type as any).type?.name || '') : '';
+      
+      const finalName = displayName || typeofSymbol || componentName;
+      
+      // Log para depuração (remova em produção)
+      console.debug('Component detection:', { 
+        displayName, 
+        componentName, 
+        typeofSymbol,
+        finalName,
+        hasTypeOf: !!(type as any).$$typeof
+      });
       
       // Determine if the component is a text component or a container component
-      const isTextComponent = componentName.includes('Text') || 
-                             componentName.includes('Title') || 
-                             componentName.includes('Description') || 
-                             componentName.includes('Label') ||
-                             componentName.includes('Paragraph');
+      const isTextComponent = 
+        finalName.includes('Text') || 
+        finalName.includes('Title') || 
+        finalName.includes('Description') || 
+        finalName.includes('Label') ||
+        finalName.includes('Paragraph') ||
+        finalName.includes('Heading') ||
+        finalName.includes('Link');
+      
+      // Special handling for known UI components
+      if (finalName.includes('Card')) {
+        return <View style={{ 
+          ...combinedStyles, 
+          padding: 10, 
+          borderWidth: 1, 
+          borderColor: '#e2e8f0', 
+          borderRadius: 8,
+          marginBottom: 10
+        }} {...restProps}>{transformedChildren}</View>;
+      }
+      
+      if (finalName.includes('CardHeader')) {
+        return <View style={{ 
+          ...combinedStyles, 
+          paddingBottom: 8 
+        }} {...restProps}>{transformedChildren}</View>;
+      }
+      
+      if (finalName.includes('CardContent')) {
+        return <View style={{ 
+          ...combinedStyles, 
+          padding: 8 
+        }} {...restProps}>{transformedChildren}</View>;
+      }
+      
+      if (finalName.includes('CardFooter')) {
+        return <View style={{ 
+          ...combinedStyles, 
+          paddingTop: 8, 
+          borderTopWidth: 1, 
+          borderTopColor: '#e5e7eb' 
+        }} {...restProps}>{transformedChildren}</View>;
+      }
       
       if (isTextComponent) {
-        return <Text style={combinedStyles} {...restProps}>{transformedChildren}</Text>;
+        return <Text style={{
+          ...combinedStyles,
+          marginBottom: 5,
+          fontSize: finalName.includes('Title') ? 18 : 14
+        }} {...restProps}>{transformedChildren}</Text>;
       } else {
-        return <View style={combinedStyles} {...restProps}>{transformedChildren}</View>;
+        return <View style={{
+          ...combinedStyles,
+          marginBottom: 5
+        }} {...restProps}>{transformedChildren}</View>;
       }
     }
 
@@ -59,7 +121,17 @@ export const ReactToReactPDF: React.FC<ReactToReactPDFProps> = ({ children }) =>
       ];
       
       if (textElements.includes(type)) {
-        return <Text style={combinedStyles} {...restProps}>{transformedChildren}</Text>;
+        // Apply specific styles based on element type
+        let additionalStyles = {};
+        if (type === 'h1') additionalStyles = { fontSize: 24, fontWeight: 'bold', marginBottom: 10 };
+        else if (type === 'h2') additionalStyles = { fontSize: 20, fontWeight: 'bold', marginBottom: 8 };
+        else if (type === 'h3') additionalStyles = { fontSize: 18, fontWeight: 'bold', marginBottom: 6 };
+        else if (type === 'h4') additionalStyles = { fontSize: 16, fontWeight: 'bold', marginBottom: 4 };
+        else if (type === 'h5') additionalStyles = { fontSize: 14, fontWeight: 'bold', marginBottom: 4 };
+        else if (type === 'h6') additionalStyles = { fontSize: 12, fontWeight: 'bold', marginBottom: 4 };
+        else if (type === 'p') additionalStyles = { marginBottom: 8 };
+        
+        return <Text style={{ ...combinedStyles, ...additionalStyles }} {...restProps}>{transformedChildren}</Text>;
       }
       
       // Container elements
@@ -70,13 +142,13 @@ export const ReactToReactPDF: React.FC<ReactToReactPDFProps> = ({ children }) =>
       ];
       
       if (containerElements.includes(type)) {
-        return <View style={combinedStyles} {...restProps}>{transformedChildren}</View>;
+        return <View style={{ ...combinedStyles, marginBottom: 5 }} {...restProps}>{transformedChildren}</View>;
       }
       
       // Table elements
       switch (type) {
         case 'table':
-          return <View style={{ ...combinedStyles, display: 'flex', flexDirection: 'column' }} {...restProps}>{transformedChildren}</View>;
+          return <View style={{ ...combinedStyles, display: 'flex', flexDirection: 'column', marginBottom: 10 }} {...restProps}>{transformedChildren}</View>;
         
         case 'thead':
         case 'tbody':
@@ -84,15 +156,15 @@ export const ReactToReactPDF: React.FC<ReactToReactPDFProps> = ({ children }) =>
           return <View style={{ ...combinedStyles, display: 'flex', flexDirection: 'column' }} {...restProps}>{transformedChildren}</View>;
         
         case 'tr':
-          return <View style={{ ...combinedStyles, display: 'flex', flexDirection: 'row' }} {...restProps}>{transformedChildren}</View>;
+          return <View style={{ ...combinedStyles, display: 'flex', flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' }} {...restProps}>{transformedChildren}</View>;
         
         case 'th':
-          return <View style={{ ...combinedStyles, flex: 1, padding: 5, fontWeight: 'bold' }} {...restProps}>
+          return <View style={{ ...combinedStyles, flex: 1, padding: 8, fontWeight: 'bold', backgroundColor: '#f9fafb' }} {...restProps}>
             <Text style={{ fontWeight: 'bold' }}>{transformedChildren}</Text>
           </View>;
         
         case 'td':
-          return <View style={{ ...combinedStyles, flex: 1, padding: 5 }} {...restProps}>
+          return <View style={{ ...combinedStyles, flex: 1, padding: 8 }} {...restProps}>
             <Text>{transformedChildren}</Text>
           </View>;
       }

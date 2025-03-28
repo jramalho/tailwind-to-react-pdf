@@ -1,3 +1,51 @@
+// Remover a importação direta que está causando erro
+// import resolveConfig from 'tailwindcss/resolveConfig';
+
+// Usar uma abordagem mais segura com try-catch para importações
+let resolveConfig: any;
+try {
+  // Usar importação dinâmica ou require
+  resolveConfig = require('tailwindcss/resolveConfig');
+  // Se resolveConfig for um objeto com default (comum em ESM importado via require)
+  if (resolveConfig && resolveConfig.default) {
+    resolveConfig = resolveConfig.default;
+  }
+} catch (error) {
+  console.warn('Não foi possível importar resolveConfig do tailwindcss:', error);
+  // Função substituta que retorna o objeto de configuração sem modificações
+  resolveConfig = (config: any) => config || {};
+}
+
+// Usar require para importar o config do Tailwind para evitar erros de TypeScript
+let tailwindConfig: any = {};
+try {
+  // @ts-ignore
+  tailwindConfig = require('../../tailwind.config.js');
+} catch (error) {
+  console.warn('Não foi possível importar o arquivo de configuração do Tailwind:', error);
+}
+
+// Resolver a configuração do Tailwind com tratamento de erro
+let fullConfig: any = {};
+try {
+  fullConfig = resolveConfig(tailwindConfig);
+} catch (error) {
+  console.warn('Não foi possível resolver a configuração do Tailwind:', error);
+}
+
+// Remover as tentativas de importação do Tailwind e usar uma abordagem mais simples
+// Definir uma configuração padrão para usar quando o Tailwind não estiver disponível
+const defaultConfig = {
+  theme: {
+    colors: {},
+    fontSize: {}
+  }
+};
+
+// Usar uma configuração vazia como fallback
+// Use the existing fullConfig or fallback to defaultConfig
+fullConfig = fullConfig || defaultConfig;
+
 // Mapeamento de classes Tailwind para estilos React-PDF
 const tailwindToReactPDFMap: Record<string, any> = {
   // Cores de texto
@@ -251,6 +299,34 @@ export const tailwindToReactPDF = (className: string): Record<string, any> => {
     if (tailwindToReactPDFMap[cls]) {
       styles = { ...styles, ...tailwindToReactPDFMap[cls] };
     } 
+    // Try to resolve from Tailwind config
+    else if (fullConfig) {
+      try {
+        // Extrair prefixo e valor (ex: 'text-lg' -> prefixo: 'text', valor: 'lg')
+        const [prefix, ...valueParts] = cls.split('-');
+        const value = valueParts.join('-');
+        
+        // Verificar na configuração do Tailwind
+        if (prefix === 'text' && fullConfig.theme.fontSize[value]) {
+          const fontSize = fullConfig.theme.fontSize[value];
+          styles = { ...styles, fontSize: typeof fontSize === 'string' ? fontSize : fontSize[0] };
+        }
+        // Exemplo para cores
+        else if ((prefix === 'text' || prefix === 'bg' || prefix === 'border') && value.includes('-')) {
+          const [colorName, shade] = value.split('-');
+          const color = fullConfig.theme.colors[colorName]?.[shade];
+          
+          if (color) {
+            if (prefix === 'text') styles = { ...styles, color };
+            if (prefix === 'bg') styles = { ...styles, backgroundColor: color };
+            if (prefix === 'border') styles = { ...styles, borderColor: color };
+          }
+        }
+      } catch (error) {
+        // Fallback para o comportamento existente
+      }
+    }
+    
     // Handle arbitrary values with square brackets like mt-[40px]
     else if (cls.includes('[') && cls.includes(']')) {
       const prefix = cls.split('[')[0];
